@@ -197,6 +197,7 @@ var vrniRacune = function(callback) {
 
 var message = "";
 
+
 // Registracija novega uporabnika
 streznik.post('/prijava', function(zahteva, odgovor) {
   var form = new formidable.IncomingForm();
