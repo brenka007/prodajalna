@@ -146,6 +146,19 @@ var strankaIzRacuna = function(racunId, callback) {
     })
 }
 
+var izbranaStranka = function(strankaId, callback) {
+  pb.all("SELECT Customer.* FROM Customer WHERE Customer.CustomerId = " + strankaId,
+  function(napaka, vrstice) {
+    if (napaka) {
+    //console.log(strankaId);
+      callback(false);
+    } 
+    else {
+      callback(vrstice);
+    }
+  });
+}
+
 // Izpis računa v HTML predstavitvi na podlagi podatkov iz baze
 streznik.post('/izpisiRacunBaza', function(zahteva, odgovor) {
   odgovor.end();
@@ -154,19 +167,26 @@ streznik.post('/izpisiRacunBaza', function(zahteva, odgovor) {
 // Izpis računa v HTML predstavitvi ali izvorni XML obliki
 streznik.get('/izpisiRacun/:oblika', function(zahteva, odgovor) {
   pesmiIzKosarice(zahteva, function(pesmi) {
-    if (!pesmi) {
-      odgovor.sendStatus(500);
-    } else if (pesmi.length == 0) {
-      odgovor.send("<p>V košarici nimate nobene pesmi, \
+    izbranaStranka(zahteva.session.prijava, function(strankaInfo) {
+      //var strankaInfoTabela = [strankaInfo];
+      //console.log(strankaInfo[0].FirstName);
+      if (!pesmi) {
+        odgovor.sendStatus(500);
+      } 
+      else if (pesmi.length == 0) {
+        odgovor.send("<p>V košarici nimate nobene pesmi, \
         zato računa ni mogoče pripraviti!</p>");
-    } else {
-      odgovor.setHeader('content-type', 'text/xml');
-      odgovor.render('eslog', {
-        vizualiziraj: zahteva.params.oblika == 'html' ? true : false,
-        postavkeRacuna: pesmi
-      })  
-    }
-  })
+      } 
+      else {
+        odgovor.setHeader('content-type', 'text/xml');
+        odgovor.render('eslog', {
+          vizualiziraj: zahteva.params.oblika == 'html' ? true : false,
+          postavkeRacuna: pesmi,
+          osebaInfo: strankaInfo
+        })  
+      }
+    });
+  });
 })
 
 // Privzeto izpiši račun v HTML obliki
@@ -233,6 +253,7 @@ streznik.post('/stranka', function(zahteva, odgovor) {
   var form = new formidable.IncomingForm();
   
   form.parse(zahteva, function (napaka1, polja, datoteke) {
+    zahteva.session.prijava = polja.seznamStrank;
     odgovor.redirect('/')
   });
 })
